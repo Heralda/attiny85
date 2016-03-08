@@ -6,7 +6,7 @@
 
  * **Avrdude command line**
 
-   * sudo /usr/local/avr/bin/avrdude -c usbtiny -p t85 -V -U flash:w:analogSpi.h
+   * sudo /usr/local/avr/bin/avrdude -c usbtiny -p t85 -V -U flash:w:analogSpi.hex
 
 
  * **Avrdude fuse settings**
