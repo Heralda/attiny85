@@ -1,10 +1,10 @@
 /***************************************************************************
-*
-* $Revision: 1.4 $
-* $Date: Monday, September 13, 2004 12:08:54 UTC
-* $Author: L.M.Zuccarelli
-*
-****************************************************************************/
+ *
+ * $Revision: 1.4 $
+ * $Date: Saturday, February 6, 2016 10:08:54 UTC
+ * $Author: L.M.Zuccarelli
+ *
+ ****************************************************************************/
 
 #include <avr/io.h>
 #include <util/delay.h>
@@ -43,99 +43,99 @@
 
 
 void spiInitSlave(void) {
-	// Configure port directions.
-	DDRB =  0b00000010; // PB1 output
-	PORTB = 0b00000101; // PB0 and PB2 pull up
-	
-	// Configure USI to 3-wire slave mode with no overflow interrupt.
-	USICR = 0b00011000;
-	USISR = 0b00000000;
+  // Configure port directions.
+  DDRB =  0b00000010; // PB1 output
+  PORTB = 0b00000101; // PB0 and PB2 pull up
+
+  // Configure USI to 3-wire slave mode with no overflow interrupt.
+  USICR = 0b00011000;
+  USISR = 0b00000000;
 }
 
 unsigned char spiGet(void) {
-	//unsigned char in;
-	USICR = 0b00011000;
-	USISR = 0b01000000;
-	while ( (USISR & 0b01000000) != 0b01000000 ){}
-	//in = USIDR;
-	USISR = 0b00000000;
-	USICR = 0b00010000;
-	return USIDR;
+  //unsigned char in;
+  USICR = 0b00011000;
+  USISR = 0b01000000;
+  while ( (USISR & 0b01000000) != 0b01000000 ){}
+  //in = USIDR;
+  USISR = 0b00000000;
+  USICR = 0b00010000;
+  return USIDR;
 }
 
 void spiPut(unsigned char byte) {
-	USIDR = byte;
-	USICR = 0b00011000;
-	USISR = 0b01000000;
-	while ( (USISR & 0b01000000) != 0b01000000 ){}
-	USISR = 0b00000000;
-	USICR = 0b00010000;
+  USIDR = byte;
+  USICR = 0b00011000;
+  USISR = 0b01000000;
+  while ( (USISR & 0b01000000) != 0b01000000 ){}
+  USISR = 0b00000000;
+  USICR = 0b00010000;
 }
 
 void initADC(void) {
-	ADMUX  = 0b10010011; // 7:6-Internal 2.56v reference; ADC3 PB3 2
-	ADCSRA = 0b10000110; // ADC turned on; conversion not started; auto trigger off; interrupt flag; interrupt disabled; Prescaler divide by 64
-	ADCSRB = 0b00000000; // Free running
-	return;
+  ADMUX  = 0b10010011; // 7:6-Internal 2.56v reference; ADC3 PB3 2
+  ADCSRA = 0b10000110; // ADC turned on; conversion not started; auto trigger off; interrupt flag; interrupt disabled; Prescaler divide by 64
+  ADCSRB = 0b00000000; // Free running
+  return;
 }
 
 int main(void) {
 
-	unsigned char avgHi_A = 0;
-	unsigned char avgLo_A = 0;
-	unsigned char avgHi_B = 0;
-	unsigned char avgLo_B = 0;
-	unsigned char inSpi = 0;
-	int nLoop;
+  unsigned char avgHi_A = 0;
+  unsigned char avgLo_A = 0;
+  unsigned char avgHi_B = 0;
+  unsigned char avgLo_B = 0;
+  unsigned char inSpi = 0;
+  int nLoop;
 
-	initADC();
+  initADC();
   spiInitSlave();
 
-	// delay  for settling
-	_delay_ms(100);
+  // delay  for settling
+  _delay_ms(100);
 
   while(1) {
 
-		ADMUX  = 0b10010011; // 7:6-Internal 2.56v reference; ADC3 PB3 2
-		_delay_us(100);
+    ADMUX  = 0b10010011; // 7:6-Internal 2.56v reference; ADC3 PB3 2
+    _delay_us(100);
 
-		for (nLoop = 0; nLoop < 5 ; nLoop++) {
-			ADCSRA |= (1<<ADSC);
-			while (!(ADCSRA & (1<<ADSC))){}
-			avgLo_A = ADCL;
-			avgHi_A = ADCH;
-		}
+    for (nLoop = 0; nLoop < 5 ; nLoop++) {
+      ADCSRA |= (1<<ADSC);
+      while (!(ADCSRA & (1<<ADSC))){}
+      avgLo_A = ADCL;
+      avgHi_A = ADCH;
+    }
 
-		// now switch to the second channel
-		ADMUX  = 0b10010010; // 7:6-Internal 2.56v reference; ADC2 PB4 3
-		_delay_us(100);
+    // now switch to the second channel
+    ADMUX  = 0b10010010; // 7:6-Internal 2.56v reference; ADC2 PB4 3
+    _delay_us(100);
 
-		for (nLoop = 0; nLoop < 5 ; nLoop++) {
-			ADCSRA |= (1<<ADSC);
-			while (!(ADCSRA & (1<<ADSC))){}
-			avgLo_B = ADCL;
-			avgHi_B = ADCH;
-		}
+    for (nLoop = 0; nLoop < 5 ; nLoop++) {
+      ADCSRA |= (1<<ADSC);
+      while (!(ADCSRA & (1<<ADSC))){}
+      avgLo_B = ADCL;
+      avgHi_B = ADCH;
+    }
 
-		// wait for input from master
-		inSpi = spiGet();
-		// valid address
-		if ((inSpi & 0b11111111) == 0b00000011) {
-		  // send adc lo byte
-			spiPut(avgLo_A);
-			_delay_us(50);
-			// send adc hi byte
-			spiPut(avgHi_A);
+    // wait for input from master
+    inSpi = spiGet();
+    // valid address
+    if ((inSpi & 0b11111111) == 0b00000011) {
+      // send adc lo byte
+      spiPut(avgLo_A);
+      _delay_us(50);
+      // send adc hi byte
+      spiPut(avgHi_A);
 
-			_delay_us(50);
-			// send adc hi byte
-			spiPut(avgLo_B);
-			// send adc lo byte
-			_delay_us(50);
-			// send adc hi byte
-			spiPut(avgHi_B);
+      _delay_us(50);
+      // send adc hi byte
+      spiPut(avgLo_B);
+      // send adc lo byte
+      _delay_us(50);
+      // send adc hi byte
+      spiPut(avgHi_B);
 
-		}
+    }
   }
 
 }
