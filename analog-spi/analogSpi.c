@@ -128,9 +128,8 @@ int main(void) {
       spiPut(avgHi_A);
 
       _delay_us(50);
-      // send adc hi byte
-      spiPut(avgLo_B);
       // send adc lo byte
+      spiPut(avgLo_B);
       _delay_us(50);
       // send adc hi byte
       spiPut(avgHi_B);
